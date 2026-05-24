@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>buzum</title>
+<meta name="description" content="El centro de AI que cambia de color contigo.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070318">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400;500&family=Press+Start+2P&display=swap">
+
+<style>
+  /* ─── tokens ─────────────────────────────────────────────── */
+  :root{
+    --ink:        #070318;
+    --ink-2:      #0c0722;
+    --paper:      #F2EEFF;
+    --paper-dim:  rgba(242,238,255,.62);
+    --paper-mute: rgba(242,238,255,.40);
+    --paper-ghost:rgba(242,238,255,.18);
+    --indigo:     #6E63FF;
+    --indigo-soft:#7B6CFF;
+    --turquoise:  #3DEFE0;
+    --amber:      #FFC23D;
+    --mint:       #5DFFAE;
+    --orchid:     #C03DFF;
+    --rose:       #FF6BC5;
+    --rule:       rgba(242,238,255,.08);
+
+    --f-display:  "Space Grotesk", system-ui, sans-serif;
+    --f-serif:    "Instrument Serif", "Times New Roman", serif;
+    --f-mono:     "JetBrains Mono", ui-monospace, monospace;
+    --f-pixel:    "Press Start 2P", monospace;
+
+    --glow-tq:    0 0 .25em rgba(61,239,224,.78), 0 0 1.4em rgba(61,239,224,.22);
+    --glow-in:    0 0 .22em rgba(110,99,255,.55);
+    --pad-x:      clamp(20px, 5vw, 56px);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--ink);color:var(--paper)}
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    font-family: var(--f-display);
+    font-weight: 400;
+    line-height: 1.45;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    /* synthwave gradient floor */
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgba(110,99,255,.22), transparent 60%),
+      radial-gradient(140% 50% at 50% 110%, rgba(61,239,224,.10), transparent 65%),
+      var(--ink);
+    background-attachment: fixed;
+  }
+
+  ::selection{ background: var(--turquoise); color: var(--ink); }
+
+  /* ─── CRT overlay: pixel grid + scanlines ───────────────── */
+  body::before, body::after{
+    content:"";
+    position:fixed; inset:0;
+    pointer-events:none;
+    z-index: 50;
+  }
+  body::before{
+    /* 32×32 grid */
+    background-image:
+      linear-gradient(to right, rgba(242,238,255,.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(242,238,255,.025) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mix-blend-mode: screen;
+  }
+  body::after{
+    /* horizontal scanlines: 1px line every 3px */
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(242,238,255,.040) 0 1px,
+      transparent 1px 3px
+    );
+    mix-blend-mode: overlay;
+    opacity:.9;
+  }
+
+  /* ─── layout ─────────────────────────────────────────────── */
+  main{
+    width:100%;
+    margin: 0 auto;
+    padding: 0 var(--pad-x);
+  }
+
+  /* hero — wordmark gets the first three "screens" */
+  .hero{
+    min-height: 100dvh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap: clamp(28px, 4vh, 56px);
+    padding-top: max(24px, env(safe-area-inset-top));
+    padding-bottom: 24px;
+    position:relative;
+  }
+
+  .marker{
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    color: var(--paper-mute);
+    text-transform: lowercase;
+  }
+  .hero .marker.top{
+    position:absolute;
+    top: clamp(20px, 3.6vh, 36px);
+    left: var(--pad-x);
+  }
+  .hero .marker.top::before{
+    content:"";
+    display:inline-block;
+    width:6px; height:6px;
+    background: var(--turquoise);
+    box-shadow: var(--glow-tq);
+    margin-right:10px; transform: translateY(-2px);
+    animation: blink 1.6s steps(2,end) infinite;
+  }
+  .hero .marker.right{
+    position:absolute;
+    top: clamp(20px, 3.6vh, 36px);
+    right: var(--pad-x);
+  }
+
+  @keyframes blink{ 50%{ opacity:.15 } }
+
+  .wordmark{
+    font-family: var(--f-display);
+    font-weight: 600;
+    color: var(--paper);
+    line-height: .82;
+    letter-spacing: -0.045em;
+    /* ~60% viewport width on desktop, scales down */
+    font-size: clamp(96px, 21vw, 360px);
+    text-align: center;
+    margin: 0;
+    user-select: none;
+  }
+  .wordmark .u1{ color: var(--indigo); }
+  .wordmark .u2{
+    color: var(--turquoise);
+    text-shadow: var(--glow-tq);
+  }
+
+  .tagline{
+    max-width: 720px;
+    text-align: center;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: clamp(18px, 2.1vw, 26px);
+    color: var(--paper);
+    letter-spacing: -0.005em;
+    line-height: 1.4;
+    text-wrap: balance;
+  }
+  .tagline em{
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--turquoise);
+    text-shadow: 0 0 .2em rgba(61,239,224,.45);
+    font-size: 1.08em;
+    letter-spacing: 0;
+  }
+
+  .scroll-hint{
+    position:absolute;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%);
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: .22em;
+    color: var(--paper-ghost);
+    text-transform: lowercase;
+  }
+  .scroll-hint::after{
+    content:"↓";
+    display:block;
+    text-align:center;
+    margin-top:6px;
+    animation: drift 2.6s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%,100%{ transform: translateY(0); opacity:.5 }
+    50%   { transform: translateY(4px); opacity:1 }
+  }
+
+  /* transmissions ─────────────────────────────────────────── */
+  .transmissions{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: clamp(40px, 8vh, 96px) 0 clamp(80px, 16vh, 200px);
+  }
+  .block{
+    padding: clamp(56px, 14vh, 160px) 0;
+    border-top: 1px dashed var(--rule);
+  }
+  .block:first-child{ border-top: 0; padding-top: 0; }
+  .block-label{
+    font-family: var(--f-mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    color: var(--paper-mute);
+    margin-bottom: 28px;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .block-label .bullet{
+    width:6px; height:6px; background: var(--paper-mute);
+    display:inline-block;
+  }
+
+  /* 01 — log stream */
+  .logs{
+    font-family: var(--f-mono);
+    font-size: clamp(11.5px, 1.15vw, 13.5px);
+    line-height: 1.95;
+    color: var(--paper-dim);
+    white-space: nowrap;
+    overflow-x: auto;
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent);
+            mask-image: linear-gradient(to right, #000 88%, transparent);
+    scrollbar-width: none;
+  }
+  .logs::-webkit-scrollbar{ display:none; }
+  .logs .row{ display:block; }
+  .logs .ts{ color: var(--paper-mute); }
+  .logs .ok{ color: var(--mint); }
+  .logs .tq{ color: var(--turquoise); }
+  .logs .in{ color: var(--indigo-soft); }
+  .logs .am{ color: var(--amber); }
+  .logs .ro{ color: var(--rose); }
+  .logs .or{ color: var(--orchid); }
+  .logs .dim{ color: var(--paper-ghost); }
+
+  /* 02 — pixel face */
+  .face-stage{
+    display:flex; justify-content:center; align-items:center;
+    padding: clamp(28px, 6vh, 64px) 0;
+  }
+  .face{
+    --px: clamp(10px, 2.4vw, 16px);
+    display:grid;
+    grid-template-columns: repeat(10, var(--px));
+    grid-template-rows: repeat(10, var(--px));
+    gap: 1px;
+    image-rendering: pixelated;
+  }
+  .face i{
+    display:block;
+    background: var(--paper);
+  }
+  .face i.off{ background: transparent; }
+  .face i.eye{
+    background: var(--turquoise);
+    box-shadow: 0 0 6px rgba(61,239,224,.7);
+    animation: eye 3.4s steps(1,end) infinite;
+  }
+  @keyframes eye{
+    0%, 92%, 100%{ opacity:1; transform: scaleY(1); }
+    94%, 98%    { opacity:0; transform: scaleY(.1); }
+  }
+
+  /* 03 — swatch grid */
+  .swatches{
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: clamp(10px, 1.4vw, 18px);
+  }
+  .sw{
+    aspect-ratio: 1 / 1.25;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding: 12px;
+    background: var(--c);
+    color: var(--ink);
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    letter-spacing: .04em;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 18px 40px -28px var(--c);
+    position:relative;
+    transition: transform .35s ease;
+  }
+  .sw::before{
+    content:"";
+    position:absolute; top:10px; left:12px;
+    width:5px; height:5px; background: var(--ink);
+    opacity:.5;
+  }
+  .sw:hover{ transform: translateY(-3px); }
+  @media (max-width: 720px){
+    .swatches{ grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 380px){
+    .swatches{ grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* 04 — editorial quote */
+  .quote{
+    text-align:center;
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-weight: 400;
+    color: var(--paper);
+    font-size: clamp(28px, 5.4vw, 64px);
+    line-height: 1.12;
+    letter-spacing: -0.005em;
+    max-width: 14ch;
+    margin: 0 auto;
+    text-wrap: balance;
+  }
+  .quote .accent{ color: var(--turquoise); text-shadow: 0 0 .18em rgba(61,239,224,.4); }
+
+  /* 05 — terminal */
+  .terminal{
+    font-family: var(--f-mono);
+    font-size: clamp(12.5px, 1.25vw, 15px);
+    line-height: 2;
+    color: var(--paper-dim);
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    background: linear-gradient(180deg, rgba(110,99,255,.06), rgba(61,239,224,.03));
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    position:relative;
+  }
+  .terminal::before{
+    content:"buzu @ buzum.io — tx-05";
+    position:absolute; top:-9px; left:18px;
+    background: var(--ink);
+    padding: 0 8px;
+    font-size: 10.5px;
+    letter-spacing:.16em;
+    color: var(--paper-mute);
+  }
+  .terminal .line{ display:block; }
+  .terminal .prompt{ color: var(--turquoise); }
+  .terminal .ghost{ color: var(--paper-ghost); }
+  .term-out{ color: var(--paper); }
+  .cursor{
+    display:inline-block;
+    width:.55em; height:1em;
+    background: var(--turquoise);
+    box-shadow: 0 0 6px rgba(61,239,224,.7);
+    vertical-align:-2px;
+    margin-left:2px;
+    animation: cblink 1s steps(2,end) infinite;
+  }
+  @keyframes cblink{ 50%{ opacity:0 } }
+
+  /* footer ────────────────────────────────────────────────── */
+  footer{
+    padding: clamp(80px, 18vh, 220px) var(--pad-x) clamp(40px, 6vh, 80px);
+    display:flex; justify-content:center;
+  }
+  footer a{
+    font-family: var(--f-mono);
+    font-size: 12.5px;
+    color: rgba(242,238,255,.40);
+    text-decoration: none;
+    letter-spacing: .02em;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+    transition: color .25s ease, border-color .25s ease;
+  }
+  footer a:hover, footer a:focus-visible{
+    color: var(--turquoise);
+    border-bottom-color: rgba(61,239,224,.5);
+    outline: none;
+  }
+
+  /* corner sigils ─────────────────────────────────────────── */
+  .sigil{
+    position: fixed;
+    z-index: 40;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: .22em;
+    color: var(--paper-ghost);
+    text-transform: lowercase;
+    pointer-events:none;
+  }
+  .sigil.bl{ left: var(--pad-x); bottom: max(18px, env(safe-area-inset-bottom)); }
+  .sigil.br{ right: var(--pad-x); bottom: max(18px, env(safe-area-inset-bottom)); }
+  @media (max-width: 680px){
+    .sigil{ display:none; }
+    .hero .marker.right{ display:none; }
+  }
+
+  /* reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- corner sigils: pure atmosphere, no nav -->
+<div class="sigil bl">tx · live</div>
+<div class="sigil br">io · net</div>
+
+<main>
+
+  <!-- ─── HERO ───────────────────────────────────────────── -->
+  <section class="hero" aria-labelledby="wm">
+    <span class="marker top">· buzu online</span>
+    <span class="marker right">2026 · ∞</span>
+
+    <h1 class="wordmark" id="wm" aria-label="buzum">b<span class="u1">u</span>z<span class="u2">u</span>m</h1>
+
+    <p class="tagline">El centro de AI <em>que cambia de color</em> contigo.</p>
+
+    <span class="scroll-hint" aria-hidden="true">desplazá</span>
+  </section>
+
+  <!-- ─── TRANSMISSIONS ──────────────────────────────────── -->
+  <section class="transmissions" aria-label="transmisiones">
+
+    <!-- 01 — log stream -->
+    <article class="block" aria-label="transmisión 01">
+      <div class="block-label"><span class="bullet"></span>transmisión 01 · feed</div>
+      <div class="logs" tabindex="0">
+        <span class="row"><span class="ts">[2026-05-23 22:00:00 UTC]</span> daily brief dispatched · <span class="tq">1,247 signals</span> · <span class="ok">0 silenced</span></span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:04 UTC]</span> ingest:hardware ·  yields  <span class="in">+0.42σ</span>  ·  hold</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:11 UTC]</span> ingest:finance  ·  basis    <span class="am">-3bps</span>  ·  flag · desk(em)</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:19 UTC]</span> ingest:health   ·  cohort   <span class="ro">n=18,402</span> ·  enroll → 23%</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:27 UTC]</span> ingest:ops      ·  sla       <span class="ok">99.973%</span> ·  pass</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:35 UTC]</span> ingest:growth   ·  cac/ltv   <span class="or">1 : 4.6</span>  ·  reweight</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:42 UTC]</span> ingest:research ·  papers    <span class="tq">+ 312</span>     ·  read · summarise · queue</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:50 UTC]</span> playbook.handoff → <span class="in">"jueves matinal"</span> · context preserved · 14 threads</span>
+        <span class="row"><span class="ts">[2026-05-23 22:00:58 UTC]</span> chameleon.shift → <span class="tq">turquoise</span> → <span class="or">orchid</span> · domain=research</span>
+        <span class="row"><span class="ts">[2026-05-23 22:01:03 UTC]</span> <span class="dim">silenced(0) · escalated(2) · auto-resolved(41)</span></span>
+        <span class="row"><span class="ts">[2026-05-23 22:01:07 UTC]</span> next brief in <span class="ok">23h 58m 53s</span></span>
+      </div>
+    </article>
+
+    <!-- 02 — pixel face -->
+    <article class="block" aria-label="transmisión 02">
+      <div class="block-label"><span class="bullet"></span>transmisión 02</div>
+      <div class="face-stage">
+        <!-- 10x10 grid, ASCII layout encoded as classes -->
+        <div class="face" role="img" aria-label="buzu">
+          <!-- row 1 -->
+          <i class="off"></i><i class="off"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i>
+          <!-- row 2 -->
+          <i class="off"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i>
+          <!-- row 3 -->
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <!-- row 4 — eyes -->
+          <i></i><i></i><i class="eye"></i><i></i><i></i><i></i><i></i><i class="eye"></i><i></i><i></i>
+          <!-- row 5 -->
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <!-- row 6 -->
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <!-- row 7 — mouth -->
+          <i></i><i></i><i></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i></i><i></i><i></i>
+          <!-- row 8 -->
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <!-- row 9 -->
+          <i class="off"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i>
+          <!-- row 10 -->
+          <i class="off"></i><i class="off"></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i>
+        </div>
+      </div>
+    </article>
+
+    <!-- 03 — chameleon swatches -->
+    <article class="block" aria-label="transmisión 03">
+      <div class="block-label"><span class="bullet"></span>transmisión 03 · paleta</div>
+      <div class="swatches" role="list">
+        <div class="sw" style="--c:#3DEFE0" role="listitem">hardware</div>
+        <div class="sw" style="--c:#FFC23D" role="listitem">finance</div>
+        <div class="sw" style="--c:#5DFFAE" role="listitem">health</div>
+        <div class="sw" style="--c:#C03DFF; color:#F2EEFF" role="listitem">ops</div>
+        <div class="sw" style="--c:#FF6BC5" role="listitem">growth</div>
+        <div class="sw" style="--c:#7B6CFF; color:#F2EEFF" role="listitem">research</div>
+      </div>
+    </article>
+
+    <!-- 04 — editorial -->
+    <article class="block" aria-label="transmisión 04">
+      <div class="block-label" style="text-align:center; justify-content:center;"><span class="bullet"></span>transmisión 04</div>
+      <p class="quote">Un agente.<br>Muchas <span class="accent">formas.</span><br>Tu negocio.</p>
+    </article>
+
+    <!-- 05 — terminal -->
+    <article class="block" aria-label="transmisión 05">
+      <div class="block-label"><span class="bullet"></span>transmisión 05</div>
+      <div class="terminal" aria-live="off">
+        <span class="line"><span class="prompt">&gt;</span> initializing buzu<span id="t1" class="term-out"></span></span>
+        <span class="line"><span class="prompt">&gt;</span> playbook: <span id="t2" class="term-out"></span></span>
+        <span class="line"><span class="prompt">&gt;</span> awaiting context<span id="t3" class="term-out"></span><span class="cursor" id="cur" aria-hidden="true"></span></span>
+        <span class="line ghost">&nbsp;</span>
+        <span class="line ghost">(esta página no recolecta nada. ni cookies. ni email. ni vos.)</span>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ─── filtro ─────────────────────────────────────────── -->
+  <footer>
+    <a href="https://github.com/jtovard" rel="noopener noreferrer">github.com/jtovard</a>
+  </footer>
+
+</main>
+
+<script>
+/* very light typewriter — purely nice-to-have, page works without JS */
+(function(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.getElementById('t1').textContent = '...';
+    document.getElementById('t2').textContent = '___';
+    document.getElementById('t3').textContent = '.';
+    return;
+  }
+  var t1 = document.getElementById('t1');
+  var t2 = document.getElementById('t2');
+  var t3 = document.getElementById('t3');
+  function type(el, str, delay, speed){
+    return new Promise(function(res){
+      setTimeout(function(){
+        var i = 0;
+        var iv = setInterval(function(){
+          el.textContent += str[i++];
+          if (i >= str.length){ clearInterval(iv); res(); }
+        }, speed);
+      }, delay);
+    });
+  }
+  function pause(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+  // run only once we're near it, so it isn't wasted off-screen
+  var seen = false;
+  function run(){
+    if (seen) return;
+    var box = document.querySelector('.terminal').getBoundingClientRect();
+    if (box.top > window.innerHeight - 100) return;
+    seen = true;
+    (async function(){
+      await type(t1, '...', 200, 220);
+      await pause(280);
+      await type(t2, '___', 100, 180);
+      await pause(220);
+      await type(t3, '.', 80, 60);
+    })();
+  }
+  window.addEventListener('scroll', run, {passive:true});
+  window.addEventListener('load', run);
+})();
+</script>
+
+</body>
+</html>
